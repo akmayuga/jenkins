@@ -1,0 +1,48 @@
+
+#!/bin/bash
+
+# Check file if exists
+if [[ `ls $1 2>/dev/null` == "" ]];then echo -e "File does not exist";exit 1;fi
+
+# Check argument validity
+if [[ $# -eq 0 ]];then echo -e "Must supply inventory RID file\nUsage:\tbash $0 <file>";exit 1;fi
+
+# Check if script will be run by sktuser
+if [[ `whoami` != "sktuser" ]];then echo -e "Must be sktuser to execute this script";exit 1;fi
+
+# Set output file name
+OUTPUT_FILE=$1-`date +%y%m%d%H%M%S`.txt
+
+# Walkthrough each strings
+for i in `cat $1`;do
+        unset NUC_IP
+
+        # Get NUC_IP
+        NUC_IP=`show-vpn-ips|grep -i $i|grep ^[0-9][0-9]|cut -d\, -f1`
+        if [[ `echo $NUC_IP` == "" ]];then
+                echo "$i - Failed to capture ip address" >> $OUTPUT_FILE
+                continue
+        fi
+
+
+    # SSH and capture hostname + dahdi port info
+    ssh_output=$(ssh -o ServerAliveInterval=1 -o ServerAliveCountMax=1 "$NUC_IP" '
+        hostname
+        sudo /home/bweschke/openvox_fxo_status.exp
+    ')
+
+    # Get hostname (first line)
+    hostname=$(echo "$ssh_output" | head -n 1)
+    echo "$hostname" >> "$OUTPUT_FILE"
+
+    # Process each Line= output
+    port_number=1
+    echo "$ssh_output" | grep 'Line=' | while read -r line_status; do
+        status=$(echo "$line_status" | awk -F'=' '{print $2}' | tr -d ' ')
+        echo "Port $port_number: $status" >> "$OUTPUT_FILE"
+        port_number=$((port_number + 1))
+    done
+
+    echo "" >> "$OUTPUT_FILE"  # Blank line after each device
+    
+done < "$1"

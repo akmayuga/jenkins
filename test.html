@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sample Input Form</title>
+</head>
+<body>
+    <h2>Enter Your Name:</h2>
+    <input type="text" id="nameInput">
+    <button onclick="submitName()">Submit</button>
+    <p id="output"></p>
+
+    <script>
+        function submitName() {
+            // Get the value entered in the input field
+            var name = document.getElementById("nameInput").value;
+
+            // Display the name on the web page
+            document.getElementById("output").innerText = "Hello, " + name + "!";
+        }
+    </script>
+</body>
+</html>
