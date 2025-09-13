@@ -1,0 +1,10 @@
+---
+- name: Test SSH access by rebooting Fedora server
+  hosts: fedora
+  become: yes
+  tasks:
+    - name: Reboot the server
+      ansible.builtin.reboot:
+        msg: "Triggered by Jenkins test playbook"
+        connect_timeout: 5
+        reboot_timeout: 300
