@@ -10,10 +10,13 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        // Checkout using the Git credential stored in Jenkins (github-creds)
+        // Checkout using the Git credential stored in Jenkins (jenkinsgit)
         checkout([$class: 'GitSCM',
           branches: [[name: '*/main']],
-          userRemoteConfigs: [[url: 'https://github.com/akmayuga/jenkins.git', credentialsId: 'github-creds']]
+          userRemoteConfigs: [[
+            url: 'https://github.com/akmayuga/jenkins.git',
+            credentialsId: 'jenkinsgit'
+          ]]
         ])
       }
     }
@@ -31,11 +34,11 @@ pipeline {
         expression { return params.REBOOT_SERVER == true }
       }
       steps {
-        // Use SSH credentials added in Jenkins (fedora-ssh). Requires SSH Agent plugin.
-        sshagent (credentials: ['fedora-ssh']) {
+        // Use SSH credentials added in Jenkins (ID of your 'sktuser' private key)
+        sshagent (credentials: ['3c3b3d3b-aa8c-4cda-a744-57ee8d56d62e']) {
           // Run remote reboot via ssh. -o StrictHostKeyChecking=no avoids prompt for unknown host keys.
           sh """
-            ssh -o StrictHostKeyChecking=no ${params.SSH_USER}@${params.FEDORA_IP} sudo reboot
+            ssh -o StrictHostKeyChecking=no sktuser@${params.FEDORA_IP} sudo reboot
           """
         }
       }
