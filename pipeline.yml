@@ -2,8 +2,8 @@ pipeline {
   agent any
 
   parameters {
-    string(name: 'FEDORA_IP', defaultValue: '192.0.2.10', description: 'IP address of Fedora server')
-    string(name: 'SSH_USER', defaultValue: 'fedora', description: 'SSH user to connect as')
+    string(name: 'FEDORA_IP', defaultValue: '172.30.242.229', description: 'IP address of Fedora server')
+    string(name: 'SSH_USER', defaultValue: 'sktuser', description: 'SSH user to connect as')
     booleanParam(name: 'REBOOT_SERVER', defaultValue: false, description: 'Check to reboot the Fedora server')
   }
 
