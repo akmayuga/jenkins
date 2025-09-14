@@ -1,10 +1,49 @@
----
-- name: Test SSH access by rebooting Fedora server
-  hosts: fedora
-  become: yes
-  tasks:
-    - name: Reboot the server
-      ansible.builtin.reboot:
-        msg: "Triggered by Jenkins test playbook"
-        connect_timeout: 5
-        reboot_timeout: 300
+pipeline {
+  agent any
+
+  parameters {
+    string(name: 'FEDORA_IP', defaultValue: '192.0.2.10', description: 'IP address of Fedora server')
+    string(name: 'SSH_USER', defaultValue: 'fedora', description: 'SSH user to connect as')
+    booleanParam(name: 'REBOOT_SERVER', defaultValue: false, description: 'Check to reboot the Fedora server')
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        // Checkout using the Git credential stored in Jenkins (github-creds)
+        checkout([$class: 'GitSCM',
+          branches: [[name: '*/main']],
+          userRemoteConfigs: [[url: 'https://github.com/akmayuga/jenkins.git', credentialsId: 'github-creds']]
+        ])
+      }
+    }
+
+    stage('Verify / Ping') {
+      steps {
+        echo "Params: FEDORA_IP=${params.FEDORA_IP}, SSH_USER=${params.SSH_USER}, REBOOT=${params.REBOOT_SERVER}"
+        // Optional: simple ping test to check reachability
+        sh "ping -c 2 ${params.FEDORA_IP} || true"
+      }
+    }
+
+    stage('Reboot Fedora') {
+      when {
+        expression { return params.REBOOT_SERVER == true }
+      }
+      steps {
+        // Use SSH credentials added in Jenkins (fedora-ssh). Requires SSH Agent plugin.
+        sshagent (credentials: ['fedora-ssh']) {
+          // Run remote reboot via ssh. -o StrictHostKeyChecking=no avoids prompt for unknown host keys.
+          sh """
+            ssh -o StrictHostKeyChecking=no ${params.SSH_USER}@${params.FEDORA_IP} sudo reboot
+          """
+        }
+      }
+    }
+  }
+
+  post {
+    success { echo 'Pipeline completed successfully' }
+    failure { echo 'Pipeline failed - check console output' }
+  }
+}
